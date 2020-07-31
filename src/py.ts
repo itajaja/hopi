@@ -35,12 +35,12 @@ export class Py implements PyBase {
 
   x = async (strings: TemplateStringsArray, ...vars: PyVar[]) => {
     const cmd = buildCommand(strings, vars);
-    await this.shell.sendAndReceive(`EXEC${cmd}`);
+    await this.shell.sendAndReceive('EXEC', cmd);
   };
 
   e = (strings: TemplateStringsArray, ...vars: PyVar[]) => {
     const cmd = buildCommand(strings, vars);
-    return this.shell.sendAndReceive(`EVAL${cmd}`);
+    return this.shell.sendAndReceive('EVAL', cmd);
   };
 
   expr = (strings: TemplateStringsArray, ...vars: PyVar[]): PyVar => {
@@ -48,7 +48,7 @@ export class Py implements PyBase {
     const varId = `v${this.varCounter++}`;
 
     const resolver = Promise.all(vars.map((v) => v.resolver)).then(() => {
-      this.shell.sendAndReceive(`EXEC${varId}=${cmd.join('')}`);
+      this.shell.sendAndReceive('EXEC', `${varId}=${cmd.join('')}`);
     });
 
     return new PyVar(this, varId, resolver);

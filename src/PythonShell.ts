@@ -8,19 +8,39 @@ import sys, json
 
 for line in sys.stdin:
   l = line[:-1]
-  sys.stderr.write(f'{l}')
+  # sys.stderr.write(f'{l}') uncomment for debugging
 
-  cmd = line[:4]
-  data = line[4:]
+  i1 = line.index('=')
+  i2 = line.index('=', i1+1)
+
+  msg_id = line[:i1]
+  cmd = line[i1+1:i2]
+  data = line[i2+1:]
+
+  serializable_types = {float, int}
+
   if cmd == 'EVAL':
-    print(eval(data))
+    result = eval(data)
+    result_type = type(result)
+    if result_type == str:
+      pass
+    elif result_type in serializable_types:
+      result = str(result)
+    else:
+      result = f'{result_type} not serializable'
+
   elif cmd == 'EXEC':
     exec(data)
-    print('.')
+    result = ''
+
+  status = "PASS" # TODO revisit
+  print(f"{msg_id}={status}=" + result)
 `;
 
 export default class PythonShell {
-  private messages: string[] = [];
+  private messages = new Map<string, string>();
+
+  private msgCounter = 0;
 
   proc: ReturnType<typeof spawn>;
 
@@ -34,26 +54,41 @@ export default class PythonShell {
       console.warn(`python process exited with code ${code}`);
     });
 
-    this.proc.stdout!.on('data', (c) => {
-      this.messages.push(...c.toString().split('\n').filter(Boolean));
+    this.proc.stdout!.on('data', (c: string) => {
+      c.toString().split('\n').filter(Boolean).forEach(this.onResponse);
     });
   }
 
-  async receive() {
-    while (!this.messages.length) {
+  onResponse = (msg: string) => {
+    const i1 = msg.indexOf('=');
+    const i2 = msg.indexOf('=', i1 + 1);
+
+    const msgId = msg.substring(0, i1);
+    const response = msg.substring(i2 + 1);
+
+    this.messages.set(msgId, response);
+  };
+
+  async receive(msgId: string) {
+    while (!this.messages.has(msgId)) {
       // eslint-disable-next-line no-await-in-loop
       await sleep(1);
     }
-    return this.messages.splice(0, 1)[0];
+
+    const msg = this.messages.get(msgId)!;
+    this.messages.delete(msgId);
+    return msg;
   }
 
-  send(msg: string) {
-    this.proc.stdin!.write(`${msg}\n`);
+  send(cmd: 'EVAL' | 'EXEC', msg: string) {
+    const msgId = this.msgCounter++;
+    this.proc.stdin!.write(`${msgId}=${cmd}=${msg}\n`);
+    return msgId.toString();
   }
 
-  async sendAndReceive(msg: string) {
-    this.send(msg);
-    const response = await this.receive();
+  async sendAndReceive(cmd: 'EVAL' | 'EXEC', msg: string) {
+    const msgId = this.send(cmd, msg);
+    const response = await this.receive(msgId);
     return response;
   }
 

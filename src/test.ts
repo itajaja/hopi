@@ -11,7 +11,7 @@ async function run() {
   const pandas = py`pandas`;
   const s = py`${pandas}.Series(range(0, 5000))`;
 
-  console.log('MAX:', await py`${s}.max()`);
+  console.log('MAX:', await py`int(${s}.max())`);
 
   py.shell.kill();
 }
