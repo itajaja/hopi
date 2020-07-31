@@ -10,12 +10,15 @@ async function run() {
     await py.x`import pandas`;
     await py.x`import random`;
     const pandas = py`pandas`;
+    const int = py`int`;
+    const range = py`range`;
 
-    const s = py`${pandas}.Series(range(0, random.randint(0, 100)))`;
+    const s = pandas.Series(range(0, 55));
 
-    const max = py`int(${s}.max())`;
-    const avg = py`int(${s}.mean())`;
-    console.log('MAX:', await max, await avg);
+    const max = int(s.max());
+    const avg = int(s.mean());
+    const avg2 = int(py`${s}[:5]`.mean());
+    console.log('result:', await max, await avg, await avg2);
   } catch (e) {
     console.log('received an error:', e.message);
   } finally {

@@ -2,7 +2,10 @@
 
 - [x] better match send /w receive
 - [x] error handling
-- [ ] proxy for dots and methods
+- [x] proxy for dots and methods
+- [ ] add kwargs
+- [ ] serializers
+- [ ] provide builtin functions
 - [ ] gc
 - [ ] tests
 - [ ] readme/docs/examples

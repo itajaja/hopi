@@ -8,7 +8,7 @@ import sys, json
 
 for line in sys.stdin:
   l = line[:-1]
-  # sys.stderr.write(f'{l}') uncomment for debugging
+  # sys.stderr.write(f'{l}')  # uncomment for debugging
 
   i1 = line.index('=')
   i2 = line.index('=', i1+1)
