@@ -47,10 +47,11 @@ export class Py implements PyBase {
     const cmd = strings.map((s, i) => `${s}${resolveVar(vars[i])}`);
     const varId = `v${this.varCounter++}`;
 
-    const resolver = Promise.all(vars.map((v) => v.resolver)).then(() => {
-      this.shell.sendAndReceive('EXEC', `${varId}=${cmd.join('')}`);
-    });
-
+    const resolver = Promise.all(vars.map((v) => v.resolver)).then(
+      async () => {
+        await this.shell.sendAndReceive('EXEC', `${varId}=${cmd.join('')}`);
+      },
+    );
     return new PyVar(this, varId, resolver);
   };
 }

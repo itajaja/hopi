@@ -19,26 +19,35 @@ for line in sys.stdin:
 
   serializable_types = {float, int}
 
-  if cmd == 'EVAL':
-    result = eval(data)
-    result_type = type(result)
-    if result_type == str:
-      pass
-    elif result_type in serializable_types:
-      result = str(result)
-    else:
-      result = f'{result_type} not serializable'
+  status = "PASS"
+  try:
+    if cmd == 'EVAL':
+      result = eval(data)
+      result_type = type(result)
+      if result_type == str:
+        pass
+      elif result_type in serializable_types:
+        result = str(result)
+      else:
+        result = f'{result_type} not serializable'
 
-  elif cmd == 'EXEC':
-    exec(data)
-    result = ''
+    elif cmd == 'EXEC':
+      exec(data)
+      result = ''
+  except BaseException as e:
+    result = str(e)
+    status = "FAIL"
 
-  status = "PASS" # TODO revisit
   print(f"{msg_id}={status}=" + result)
 `;
 
+interface Message {
+  status: 'PASS' | 'FAIL';
+  data: string;
+}
+
 export default class PythonShell {
-  private messages = new Map<string, string>();
+  private messages = new Map<string, Message>();
 
   private msgCounter = 0;
 
@@ -64,9 +73,10 @@ export default class PythonShell {
     const i2 = msg.indexOf('=', i1 + 1);
 
     const msgId = msg.substring(0, i1);
-    const response = msg.substring(i2 + 1);
+    const status = msg.substring(i1 + 1, i2) as Message['status'];
+    const data = msg.substring(i2 + 1);
 
-    this.messages.set(msgId, response);
+    this.messages.set(msgId, { status, data });
   };
 
   async receive(msgId: string) {
@@ -88,8 +98,11 @@ export default class PythonShell {
 
   async sendAndReceive(cmd: 'EVAL' | 'EXEC', msg: string) {
     const msgId = this.send(cmd, msg);
-    const response = await this.receive(msgId);
-    return response;
+    const { data, status } = await this.receive(msgId);
+    if (status === 'FAIL') {
+      throw new Error(data);
+    }
+    return data;
   }
 
   kill() {
