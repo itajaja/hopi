@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import Deserializer from './Serializer';
 import { createPythonEnv, kwargs } from './py';
 
 const py = createPythonEnv(
@@ -7,6 +8,15 @@ const py = createPythonEnv(
 
 async function run() {
   try {
+    await py.shell.addBuiltinSerializers();
+    py.shell.addSerializer(
+      new Deserializer({
+        typeName: 'numpy.float64',
+        serialize: 'lambda v: str(float(v))',
+        deserialize: (s) => Number(s),
+      }),
+    );
+
     const pandas = await py.import('pandas');
     const int = py`int`;
     const range = py`range`;
@@ -18,10 +28,10 @@ async function run() {
 
     const max = int(s.max());
     const avg = int(s.mean());
-    const avg2 = int(s`[:5]`.mean());
+    const avg2 = s`[:5]`.mean();
     console.log('result:', await max.v, await avg.v, await avg2.v);
   } catch (e) {
-    console.log('received an error:', e.message);
+    console.log('received an error:', e);
   } finally {
     py.shell.kill();
   }

@@ -4,8 +4,9 @@
 - [x] error handling
 - [x] proxy for dots and methods
 - [x] add kwargs
+- [x] deserializers
 - [ ] serializers
-- [ ] provide builtin functions
+- [ ] pandas
 - [ ] gc
 - [ ] tests
 - [ ] readme/docs/examples
