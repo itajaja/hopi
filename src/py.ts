@@ -23,7 +23,8 @@ function isTemplateStrings(v: any): v is TemplateStringsArray {
 
 function resolveTemplateValue(v: TemplateValue) {
   if (v === undefined) return '';
-  if (typeof v === 'string' || typeof v === 'number') return v;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') return `"${v}"`;
   if (typeof v === 'symbol') return v.description;
   return v.varId;
 }
@@ -89,7 +90,14 @@ class PyVariable implements PromiseLike<any> {
   }
 }
 
-type PyArgs = TemplateValue;
+class Kwargs {
+  // eslint-disable-next-line no-shadow
+  constructor(public kwargs: Dict<TemplateValue>) {}
+}
+export function kwargs(k: Dict<TemplateValue>) {
+  return new Kwargs(k);
+}
+type PyArgs = TemplateValue | Kwargs;
 
 interface PyVarDict {
   [idx: string]: PyVar;
@@ -107,7 +115,7 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
       if (key in pyVar) return (pyVar as any)[key];
       if (typeof key !== 'string') throw new Error('only strings supported');
 
-      return py.expr`${pyVar}.${key}`;
+      return py.expr(['', `.${key}`], pyVar);
     },
     apply: (
       _target,
@@ -128,9 +136,30 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
       const vars: TemplateValue[] = [pyVar];
       pyArgs.forEach((a, i) => {
         const isLast = i + 1 === pyArgs.length;
-        vars.push(a);
         if (!isLast) {
+          if (a instanceof Kwargs) {
+            throw new Error('kwargs need to be last');
+          }
+          vars.push(a);
           strings.push(',');
+        }
+        if (isLast) {
+          if (a instanceof Kwargs) {
+            if (pyArgs.length >= 2) {
+              strings.pop(); // remove last comma
+            }
+            Object.entries(a.kwargs).forEach(([k, v], ki) => {
+              const isFirstKwarg = ki === 0;
+              if (isFirstKwarg && pyArgs.length < 2) {
+                strings.push(`${k}=`);
+              } else {
+                strings.push(`,${k}=`);
+              }
+              vars.push(v);
+            });
+          } else {
+            vars.push(a);
+          }
         }
       });
       strings.push(')');

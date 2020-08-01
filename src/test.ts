@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { createPythonEnv } from './py';
+import { createPythonEnv, kwargs } from './py';
 
 const py = createPythonEnv(
   '/Users/gtagliabue/workspace/jupyter-playground/.venv/bin/python',
@@ -13,7 +13,10 @@ async function run() {
     const int = py`int`;
     const range = py`range`;
 
-    const s = pandas.Series(range(0, 55));
+    const s = pandas.Series(
+      range(0, 55),
+      kwargs({ name: 'foo', dtype: py`float` }),
+    );
 
     const max = int(s.max());
     const avg = int(s.mean());
