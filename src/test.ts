@@ -7,9 +7,7 @@ const py = createPythonEnv(
 
 async function run() {
   try {
-    await py.x`import pandas`;
-    await py.x`import random`;
-    const pandas = py`pandas`;
+    const pandas = await py.import('pandas');
     const int = py`int`;
     const range = py`range`;
 
@@ -21,7 +19,7 @@ async function run() {
     const max = int(s.max());
     const avg = int(s.mean());
     const avg2 = int(s`[:5]`.mean());
-    console.log('result:', await max, await avg, await avg2);
+    console.log('result:', await max.v, await avg.v, await avg2.v);
   } catch (e) {
     console.log('received an error:', e.message);
   } finally {

@@ -5,6 +5,7 @@ import PythonShell from './PythonShell';
 interface PyBase {
   x: (strings: readonly string[], ...vars: PyVar[]) => Promise<void>;
   e: (strings: readonly string[], ...vars: PyVar[]) => Promise<string>;
+  import: (name: string) => Promise<PyVar>;
   shell: PythonShell;
 }
 
@@ -53,6 +54,11 @@ export class Py implements PyBase {
     return this.shell.sendAndReceive('EVAL', cmd);
   };
 
+  import = async (name: string) => {
+    await this.x([`import ${name}`]);
+    return this.expr([name]);
+  };
+
   expr = (strings: readonly string[], ...vars: TemplateValue[]): PyVar => {
     const cmd = buildCommand(strings, vars);
     const varId = `v${this.varCounter++}`;
@@ -67,26 +73,15 @@ export class Py implements PyBase {
   };
 }
 
-class PyVariable implements PromiseLike<any> {
+class PyVariable {
   constructor(
     private py: Py,
     public varId: string,
     public resolver: Promise<void>,
   ) {}
 
-  then<TResult1 = any, TResult2 = never>(
-    onfulfilled?:
-      | ((value: any) => TResult1 | PromiseLike<TResult1>)
-      | null
-      | undefined,
-    onrejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | null
-      | undefined,
-  ): PromiseLike<TResult1 | TResult2> {
-    return this.resolver
-      .then(() => this.py.e`${this}`)
-      .then(onfulfilled, onrejected);
+  get v() {
+    return this.resolver.then(() => this.py.e`${this}`);
   }
 }
 
@@ -112,6 +107,9 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
 
   return new Proxy(() => null, {
     get: (_: unknown, key: PropertyKey): PyVar => {
+      if (key === 'then') {
+        return undefined as any;
+      }
       if (key in pyVar) return (pyVar as any)[key];
       if (typeof key !== 'string') throw new Error('only strings supported');
 
