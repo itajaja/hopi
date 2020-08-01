@@ -17,6 +17,9 @@ type TemplateValue = PyVariable | string | number | symbol | undefined;
 function isPyVar(v: TemplateValue): v is PyVar {
   return typeof v === 'object' || typeof v === 'function';
 }
+function isTemplateStrings(v: any): v is TemplateStringsArray {
+  return v instanceof Array && (v as any).raw;
+}
 
 function resolveTemplateValue(v: TemplateValue) {
   if (v === undefined) return '';
@@ -91,7 +94,10 @@ type PyArgs = TemplateValue;
 interface PyVarDict {
   [idx: string]: PyVar;
 }
-type PyVar = PyVarDict & PyVariable & ((...a: PyArgs[]) => PyVar);
+type PyVar = PyVarDict &
+  PyVariable &
+  ((...a: PyArgs[]) => PyVar) &
+  ((strings: readonly string[], ...vars: PyVar[]) => PyVar);
 
 function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
   const pyVar = new PyVariable(py, varId, resolver);
@@ -103,11 +109,25 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
 
       return py.expr`${pyVar}.${key}`;
     },
-    apply: (_target, _thisArg, allArgs: PyArgs[]): PyVar => {
+    apply: (
+      _target,
+      _thisArg,
+      allArgs: PyArgs[] | [TemplateStringsArray, ...PyVar[]],
+    ): PyVar => {
+      if (isTemplateStrings(allArgs[0])) {
+        const [strings, ...templateVars] = allArgs as [
+          TemplateStringsArray,
+          ...PyVar[]
+        ];
+        return py.expr(['', ...strings], ...[pyVar, ...templateVars]);
+      }
+
+      const pyArgs = allArgs as PyArgs[];
+
       const strings: string[] = ['', '('];
       const vars: TemplateValue[] = [pyVar];
-      allArgs.forEach((a, i) => {
-        const isLast = i + 1 === allArgs.length;
+      pyArgs.forEach((a, i) => {
+        const isLast = i + 1 === pyArgs.length;
         vars.push(a);
         if (!isLast) {
           strings.push(',');

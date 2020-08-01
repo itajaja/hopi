@@ -17,7 +17,7 @@ async function run() {
 
     const max = int(s.max());
     const avg = int(s.mean());
-    const avg2 = int(py`${s}[:5]`.mean());
+    const avg2 = int(s`[:5]`.mean());
     console.log('result:', await max, await avg, await avg2);
   } catch (e) {
     console.log('received an error:', e.message);
