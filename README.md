@@ -1,14 +1,12 @@
 ## TODO
 
-- name
-  - crotalus
-  - liger
-  - flying circus
-  - medusa
-  - hopi
-  - hopy
-- error handling
-- gc
-- better match send /w receive
-- proxy for dots and methods
-- readme/docs/examples
+- [x] better match send /w receive
+- [x] error handling
+- [x] proxy for dots and methods
+- [x] add kwargs
+- [x] deserializers
+- [ ] serializers
+- [ ] pandas
+- [ ] gc
+- [ ] tests
+- [ ] readme/docs/examples

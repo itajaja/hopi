@@ -1,12 +1,12 @@
 {
-  "name": "flying-circus",
-  "version": "1.0.0",
+  "name": "hopy",
+  "version": "0.1.0",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/4Catalyzer/flying-circus.git"
+    "url": "https://github.com/itajaja/hopy.git"
   },
-  "author": "4Catalyzer",
+  "author": "Giacomo Tagliabue",
   "license": "MIT",
   "scripts": {
     "build": "4c build src",
