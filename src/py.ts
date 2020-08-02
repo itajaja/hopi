@@ -122,13 +122,18 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
   const pyVar = new PyVariable(py, varId, resolver);
 
   return new Proxy(() => null, {
-    get: (_: unknown, key: PropertyKey): PyVar => {
+    get: (_: unknown, key: string): PyVar => {
       if (key === 'then') {
         return undefined as any;
       }
       if (key in pyVar) return (pyVar as any)[key];
-      if (typeof key !== 'string') throw new Error('only strings supported');
 
+      if (!Number.isNaN(Number(key))) {
+        return py.expr(['', `[${Number(key)}]`], pyVar);
+      }
+      if (!/^[a-zA-Z_][\w]*$/.test(key)) {
+        return py.expr(['', `[${resolveTemplateValue(key)}]`], pyVar);
+      }
       return py.expr(['', `.${key}`], pyVar);
     },
     apply: (
@@ -159,13 +164,11 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
         }
         if (isLast) {
           if (a instanceof Kwargs) {
-            if (pyArgs.length >= 2) {
-              strings.pop(); // remove last comma
-            }
+            strings.pop(); // remove last string
             Object.entries(a.kwargs).forEach(([k, v], ki) => {
               const isFirstKwarg = ki === 0;
               if (isFirstKwarg && pyArgs.length < 2) {
-                strings.push(`${k}=`);
+                strings.push(`(${k}=`);
               } else {
                 strings.push(`,${k}=`);
               }

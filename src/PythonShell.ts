@@ -27,9 +27,7 @@ for line in sys.stdin:
             result = eval(data)
             result_type = type(result)
             result_type = f"{result_type.__module__}.{result_type.__name__}"
-            if result_type == "str":
-                pass
-            elif result_type in serializers:
+            if result_type in serializers:
                 result = serializers[result_type](result)
             else:
                 raise Exception(f"{result_type} not serializable")

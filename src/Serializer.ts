@@ -10,6 +10,16 @@ export default class Deserializer<T> {
 
 export const builtinDeserializers = [
   new Deserializer({
+    typeName: 'builtins.str',
+    serialize: "lambda v: v.replace('\\n', '\\\\n')",
+    deserialize: (s) => s.replace(/\\n/g, '\n'),
+  }),
+  new Deserializer({
+    typeName: 'builtins.NoneType',
+    serialize: 'lambda v: "."',
+    deserialize: () => null,
+  }),
+  new Deserializer({
     typeName: 'builtins.int',
     serialize: 'lambda v: str(v)',
     deserialize: (s) => Number(s),
