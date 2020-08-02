@@ -1,6 +1,6 @@
 {
   "name": "hopi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
@@ -37,7 +37,9 @@
   "jest": {
     "preset": "@4c/jest-preset",
     "testEnvironment": "node",
-    "testMatch": ["**/tests/*.test.ts" ]
+    "testMatch": [
+      "**/tests/*.test.ts"
+    ]
   },
   "release": {
     "publishDir": "lib"
