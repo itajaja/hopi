@@ -51,7 +51,7 @@ function buildCommand(strings: readonly string[], vars: TemplateValue[]) {
   return cmd.join('');
 }
 
-export class Py implements PyBase {
+class Py implements PyBase {
   shell: PythonShell;
 
   varCounter = 0;
