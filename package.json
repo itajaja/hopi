@@ -1,10 +1,10 @@
 {
-  "name": "hopy",
+  "name": "hopi",
   "version": "0.1.0",
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/itajaja/hopy.git"
+    "url": "https://github.com/itajaja/hopi.git"
   },
   "author": "Giacomo Tagliabue",
   "license": "MIT",
