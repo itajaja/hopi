@@ -13,25 +13,41 @@ interface PythonEnv extends PyBase {
   (strings: readonly string[], ...vars: PyVar[]): PyVar;
 }
 
-type TemplateValue = PyVariable | string | number | symbol | undefined;
+type TemplateValue =
+  | PyVariable
+  | string
+  | number
+  | boolean
+  | null
+  | TemplateValue[]
+  | { [idx: string]: TemplateValue };
 
-function isPyVar(v: TemplateValue): v is PyVar {
-  return typeof v === 'object' || typeof v === 'function';
+function isPyVariable(v: TemplateValue): v is PyVariable {
+  return !!v && typeof (v as any).varId === 'string';
 }
 function isTemplateStrings(v: any): v is TemplateStringsArray {
   return v instanceof Array && (v as any).raw;
 }
 
-function resolveTemplateValue(v: TemplateValue) {
-  if (v === undefined) return '';
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') return `"${v}"`;
-  if (typeof v === 'symbol') return v.description;
-  return v.varId;
+function resolveTemplateValue(v: TemplateValue): string {
+  if (v === null) return 'None';
+  if (typeof v === 'string') return `"${v.replace('/"/g', '\\"')}"`;
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'boolean') return v ? 'True' : 'False';
+  if (v instanceof Array) return `[${v.map(resolveTemplateValue).join(',')}]`;
+  if (isPyVariable(v)) return v.varId;
+
+  // then it's a dict
+  const params = Object.entries(v).map(
+    ([k, vv]) => `${resolveTemplateValue(k)}: ${resolveTemplateValue(vv)}`,
+  );
+  return `{${params.join(',')}}`;
 }
 
 function buildCommand(strings: readonly string[], vars: TemplateValue[]) {
-  const cmd = strings.map((s, i) => `${s}${resolveTemplateValue(vars[i])}`);
+  const cmd = strings.map(
+    (s, i) => `${s}${i in vars ? resolveTemplateValue(vars[i]) : ''}`,
+  );
   return cmd.join('');
 }
 
@@ -62,7 +78,7 @@ export class Py implements PyBase {
   expr = (strings: readonly string[], ...vars: TemplateValue[]): PyVar => {
     const cmd = buildCommand(strings, vars);
     const varId = `v${this.varCounter++}`;
-    const pyVars = vars.filter(isPyVar);
+    const pyVars = vars.filter(isPyVariable);
 
     const resolver = Promise.all(pyVars.map((v) => v.resolver)).then(
       async () => {
