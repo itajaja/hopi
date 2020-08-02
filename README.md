@@ -9,4 +9,5 @@
 - [ ] pandas
 - [ ] gc
 - [ ] tests
+- [ ] CI
 - [ ] readme/docs/examples

@@ -69,9 +69,6 @@ export default class PythonShell {
     this.proc.stderr!.on('data', (d) => {
       console.warn(`STDERR: ${d}`);
     });
-    this.proc.on('close', (code) => {
-      console.warn(`python process exited with code ${code}`);
-    });
 
     this.proc.stdout!.on('data', (c: string) => {
       c.toString().split('\n').filter(Boolean).forEach(this.onResponse);
