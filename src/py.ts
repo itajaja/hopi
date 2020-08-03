@@ -2,14 +2,14 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import PythonShell from './PythonShell';
 
-interface PyBase {
+export interface PyBase {
   x: (strings: readonly string[], ...vars: PyVar[]) => Promise<void>;
   e: (strings: readonly string[], ...vars: PyVar[]) => Promise<string>;
   import: (name: string) => Promise<PyVar>;
   shell: PythonShell;
 }
 
-interface PythonEnv extends PyBase {
+export interface PythonEnv extends PyBase {
   (strings: readonly string[], ...vars: PyVar[]): PyVar;
 }
 
@@ -51,7 +51,7 @@ function buildCommand(strings: readonly string[], vars: TemplateValue[]) {
   return cmd.join('');
 }
 
-class Py implements PyBase {
+export class Py implements PyBase {
   shell: PythonShell;
 
   varCounter = 0;
@@ -89,7 +89,7 @@ class Py implements PyBase {
   };
 }
 
-class PyVariable {
+export class PyVariable {
   constructor(
     private py: Py,
     public varId: string,
@@ -101,19 +101,20 @@ class PyVariable {
   }
 }
 
-class Kwargs {
+export class Kwargs {
   // eslint-disable-next-line no-shadow
   constructor(public kwargs: Dict<TemplateValue>) {}
 }
 export function kwargs(k: Dict<TemplateValue>) {
   return new Kwargs(k);
 }
-type PyArgs = TemplateValue | Kwargs;
 
-interface PyVarDict {
+export type PyArgs = TemplateValue | Kwargs;
+
+export interface PyVarDict {
   [idx: string]: PyVar;
 }
-type PyVar = PyVarDict &
+export type PyVar = PyVarDict &
   PyVariable &
   ((...a: PyArgs[]) => PyVar) &
   ((strings: readonly string[], ...vars: PyVar[]) => PyVar);
