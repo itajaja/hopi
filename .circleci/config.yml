@@ -1,0 +1,17 @@
+version: 2
+
+jobs:
+  test:
+    docker:
+      - image: nikolaik/python-nodejs:python3.8-nodejs14
+    steps:
+      - checkout
+      - run: pip install pandas
+      - run: yarn
+      - run: yarn test
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - test
