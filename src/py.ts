@@ -62,11 +62,15 @@ export class Py implements PyBase {
 
   x = async (strings: readonly string[], ...vars: PyVar[]) => {
     const cmd = buildCommand(strings, vars);
+    const pyVars = vars.filter(isPyVariable);
+    await Promise.all(pyVars.map((v) => v.resolver));
     await this.shell.sendAndReceive('EXEC', cmd);
   };
 
-  e = (strings: readonly string[], ...vars: TemplateValue[]) => {
+  e = async (strings: readonly string[], ...vars: TemplateValue[]) => {
     const cmd = buildCommand(strings, vars);
+    const pyVars = vars.filter(isPyVariable);
+    await Promise.all(pyVars.map((v) => v.resolver));
     return this.shell.sendAndReceive('EVAL', cmd);
   };
 
