@@ -1,6 +1,6 @@
 # hopi
 
-## Example:
+## Example
 
 ```ts
 import Deserializer from './Serializer';
@@ -42,14 +42,14 @@ async function run() {
     const biggestIncrease = diffCases.iloc[0];
     const biggestIncreaseDay = diffCases.index[0];
     console.log(
-      `the biggest increase in daily new cases was ${await biggestIncrease.v} and it happened on ${(
-        await biggestIncreaseDay.v
+      `the biggest increase in daily new cases was ${await biggestIncrease._} and it happened on ${(
+        await biggestIncreaseDay._
       ).toDateString()}`,
     );
 
     const juneData = df`[${df}.date.between('2020-06-01', '2020-07-01')]`;
     const usJuneDeaths = juneData`[${juneData}.iso_code == 'USA']`.new_deaths.describe();
-    const median = await usJuneDeaths['50%'].v;
+    const median = await usJuneDeaths['50%']._;
     console.log(
       `in june, the median of daily new cases in the United states was ${median}`,
     );
@@ -57,8 +57,8 @@ async function run() {
     const requests = await py.import('requests');
 
     const resp = requests.get('https://example.com/');
-    await resp.raise_for_status().v;
-    console.log(await resp.text.v);
+    await resp.raise_for_status()._;
+    console.log(await resp.text._);
   } catch (e) {
     console.log('received an error:', e);
   } finally {

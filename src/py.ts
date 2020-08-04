@@ -100,7 +100,7 @@ export class PyVariable {
     public resolver: Promise<void>,
   ) {}
 
-  get v() {
+  get _() {
     return this.resolver.then(() => this.py.e`${this}`);
   }
 }
