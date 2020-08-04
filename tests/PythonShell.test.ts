@@ -1,9 +1,10 @@
 import { Deserializer, PythonShell } from '../src';
+import { PYTHON_PATH } from './config';
 
 let shell: PythonShell;
 
 beforeEach(() => {
-  shell = new PythonShell('python');
+  shell = new PythonShell(PYTHON_PATH);
 });
 
 afterEach(() => {

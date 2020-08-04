@@ -1,10 +1,11 @@
 import { Deserializer, createPythonEnv } from '../src';
-import { PythonEnv, kwargs } from '../src/py';
+import { PyVar, PythonEnv, kwargs } from '../src/py';
+import { PYTHON_PATH } from './config';
 
 let py: PythonEnv;
 
 beforeEach(() => {
-  py = createPythonEnv('python');
+  py = createPythonEnv(PYTHON_PATH);
   return py.shell.addBuiltinDeserializers();
 });
 
@@ -85,4 +86,58 @@ test('functions', async () => {
   expect(() => foo(kwargs({ a: 1 }), kwargs({ c: 2, b: 3 }))).toThrow(
     'kwargs need to be last',
   );
+});
+
+test('full test', async () => {
+  const pd = await py.import('pandas');
+  const np = await py.import('numpy');
+  await py.import('json');
+  await py.shell.addDeserializer(
+    new Deserializer({
+      typeName: 'builtins.list',
+      deserialize: JSON.parse,
+      serialize: 'json.dumps',
+    }),
+  );
+  await py.shell.addDeserializer(
+    new Deserializer({
+      typeName: 'pandas.core.series.Series',
+      deserialize: JSON.parse,
+      serialize: 'lambda v: json.dumps(list(v.values))',
+    }),
+  );
+
+  const df = pd.DataFrame({
+    a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    b: [1, 3, 5, 7, 9, 10, 8, 6, 4, 2],
+  });
+  await py.x`${df}['c'] = (${df}.a + ${df}.b).astype(float)`;
+  await py.x`${df}['c'] = ${df}.c`;
+
+  const ema = df.c.ewm(kwargs({ span: 3, adjust: false })).mean();
+  const rolling = ema.rolling(3, 0);
+  const emaMin = rolling.min();
+
+  const signal = py`${ema} * 0`;
+  const d = (a: PyVar, b: PyVar) => np.absolute(py`(${a} - ${b}) / ${a}`);
+
+  const ones = py`${d(ema, emaMin)} > .1`;
+  await ones.to_json().v;
+
+  await py.x`${signal}.loc[${ones}] = 1`;
+
+  expect(await signal.v).toMatchInlineSnapshot(`
+    Array [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+    ]
+  `);
 });
