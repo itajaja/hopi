@@ -76,9 +76,9 @@ run();
 - [x] proxy for dots and methods
 - [x] add kwargs
 - [x] deserializers
+- [x] tests
+- [x] CI
 - [ ] serializers
 - [ ] pandas
 - [ ] gc
-- [ ] tests
-- [ ] CI
 - [ ] readme/docs/examples
