@@ -10,7 +10,7 @@ export interface PyBase {
 }
 
 export interface PythonEnv extends PyBase {
-  (strings: readonly string[], ...vars: PyVar[]): PyVar;
+  (strings: readonly string[], ...vars: TemplateValue[]): PyVar;
 }
 
 type TemplateValue =
