@@ -37,7 +37,7 @@ for line in sys.stdin:
             result = ""
             result_type = "str"
     except BaseException as e:
-        result = str(e)
+        result = e.__repr__()
         status = "FAIL"
         result_type = "str"
 
@@ -112,7 +112,7 @@ export default class PythonShell {
     return this.deserializers[typeName](data);
   }
 
-  async addSerializer({ config }: Deserializer<any>) {
+  async addDeserializer({ config }: Deserializer<any>) {
     await this.sendAndReceive(
       'EXEC',
       `serializers["${config.typeName}"] = ${config.serialize}`,
@@ -121,8 +121,10 @@ export default class PythonShell {
     this.deserializers[config.typeName] = config.deserialize;
   }
 
-  addBuiltinSerializers() {
-    return Promise.all(builtinDeserializers.map((s) => this.addSerializer(s)));
+  addBuiltinDeserializers() {
+    return Promise.all(
+      builtinDeserializers.map((s) => this.addDeserializer(s)),
+    );
   }
 
   kill() {

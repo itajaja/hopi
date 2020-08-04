@@ -31,11 +31,6 @@ export const builtinDeserializers = [
   }),
   new Deserializer({
     typeName: 'builtins.bool',
-    serialize: 'lambda v: v',
-    deserialize: (s) => s,
-  }),
-  new Deserializer({
-    typeName: 'builtins.bool',
     serialize: 'lambda v: "." if v else ""',
     deserialize: (s) => Boolean(s),
   }),

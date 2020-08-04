@@ -10,15 +10,15 @@ const py = createPythonEnv('python');
 
 async function run() {
   try {
-    await py.shell.addBuiltinSerializers();
-    await py.shell.addSerializer(
+    await py.shell.addBuiltinDeserializers();
+    await py.shell.addDeserializer(
       new Deserializer({
         typeName: 'numpy.float64',
         serialize: 'lambda v: str(v)',
         deserialize: (s) => Number(s),
       }),
     );
-    await py.shell.addSerializer(
+    await py.shell.addDeserializer(
       new Deserializer({
         typeName: 'pandas._libs.tslibs.timestamps.Timestamp',
         serialize: 'lambda v: v.isoformat()',
