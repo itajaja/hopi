@@ -21,28 +21,17 @@ npm install hopi
 Worth a thousand words:
 
 ```ts
-import Deserializer from './Serializer';
-import { createPythonEnv, kwargs } from './py';
+import { createPythonEnv, kwargs } from 'hopi';
 
 const py = createPythonEnv('python');
 
 async function run() {
   try {
-    await py.shell.addBuiltinDeserializers();
-    await py.shell.addDeserializer(
-      new Deserializer({
-        typeName: 'numpy.float64',
-        serialize: 'lambda v: str(v)',
-        deserialize: (s) => Number(s),
-      }),
-    );
-    await py.shell.addDeserializer(
-      new Deserializer({
-        typeName: 'pandas._libs.tslibs.timestamps.Timestamp',
-        serialize: 'lambda v: v.isoformat()',
-        deserialize: (s) => new Date(s),
-      }),
-    );
+    await shell.addDecoder({
+      typeName: 'pandas._libs.tslibs.timestamps.Timestamp',
+      encode: 'lambda v: v.isoformat()',
+      decode: (s: string) => new Date(s).toDateString(),
+    });
 
     const pd = await py.import('pandas');
     let df = pd.read_csv(
@@ -93,12 +82,6 @@ First, to create a new environment:
 
 ```ts
 const py = createPythonEnv('path_to_python_binary');
-```
-
-You also most likely will need the builtin deserializers, so execute the following (more on deserializers below):
-
-```ts
-await py.shell.addBuiltinDeserializers();
 ```
 
 you can use `py` to run python code directly from javaScript.
@@ -189,31 +172,22 @@ const val = myList`[2:4]`.index`(3)`;
 const val = myList`[2:4]`.index`(${py`3`})`;
 ```
 
-### Deserializers
+### Decoders
 
-in order to read values from python in JavaScript, they need to be properly encoded in strings and then parsed in python. Deserializers for builtin types can be added with the following method:
-
-```ts
-await py.shell.addBuiltinDeserializers();
-```
-
-additional deserializers can be defined as such:
+In order to read values from python in JavaScript, they need to be properly encoded in strings and then decoded in JavaScript. Custom decoders can be defined as such:
 
 ```ts
-await py.shell.addDeserializer(
-  new Deserializer({
-    typeName: 'numpy.float64', // the fully qualified type name
-    serialize: 'lambda v: str(v)', // stringified lambda function to encode the python value into a string
-    deserialize: (s) => Number(s), // function to deserialize the string into the desired Javascript value
-  }),
-);
+await shell.addDecoder({
+  // the fully qualified type name
+  typeName: 'pandas._libs.tslibs.timestamps.Timestamp',
+  // stringified lambda function to encode the python value into a string
+  encode: 'lambda v: v.isoformat()',
+  // function to transform the value into the desired Javascript value.
+  // The `decode` argument can be used to recursively call the full decoder
+  decode: (v, decode) => new Date(v).toDateString(),
+});
 ```
-
-### Serializers
-
-_Coming soon_
 
 ## TODO
 
-- [ ] serializers
 - [ ] gc

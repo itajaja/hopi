@@ -1,4 +1,4 @@
-import { Deserializer, createPythonEnv } from '../src';
+import { createPythonEnv } from '../src';
 import { PyVar, PythonEnv, kwargs } from '../src/py';
 import { PYTHON_PATH } from './config';
 
@@ -6,7 +6,6 @@ let py: PythonEnv;
 
 beforeEach(() => {
   py = createPythonEnv(PYTHON_PATH);
-  return py.shell.addBuiltinDeserializers();
 });
 
 afterEach(() => {
@@ -34,13 +33,6 @@ test('getters', async () => {
   await py.import('json');
   const list = py`list`;
   const dict = py`dict`;
-  await py.shell.addDeserializer(
-    new Deserializer({
-      typeName: 'builtins.list',
-      deserialize: JSON.parse,
-      serialize: 'json.dumps',
-    }),
-  );
 
   const myList = list([1, 2, 3, 4, 5, 6]);
   const myDict = dict({ '10': 42 });
@@ -92,20 +84,16 @@ test('full test', async () => {
   const pd = await py.import('pandas');
   const np = await py.import('numpy');
   await py.import('json');
-  await py.shell.addDeserializer(
-    new Deserializer({
-      typeName: 'builtins.list',
-      deserialize: JSON.parse,
-      serialize: 'json.dumps',
-    }),
-  );
-  await py.shell.addDeserializer(
-    new Deserializer({
-      typeName: 'pandas.core.series.Series',
-      deserialize: JSON.parse,
-      serialize: 'lambda v: json.dumps(list(v.values))',
-    }),
-  );
+  await py.shell.addDecoder({
+    typeName: 'pandas.core.series.Series',
+    encode: 'lambda v: v.values',
+    decode: (v, decode) => decode(v),
+  });
+  await py.shell.addDecoder({
+    typeName: 'numpy.ndarray',
+    encode: 'list',
+    decode: (v) => v,
+  });
 
   const df = pd.DataFrame({
     a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],

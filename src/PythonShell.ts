@@ -1,55 +1,61 @@
 /* eslint-disable no-console */
 import { spawn } from 'child_process';
 
-import Deserializer, { builtinDeserializers } from './serializers';
+import { Decoder, TypeDecoder } from './Decoder';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function getPythonScript(debug: boolean) {
   return `
 import sys
+import json
 
-serializers = {}
+encoders = {}
+
+class Encoder(json.JSONEncoder):
+  def default(self, o):
+      o_type = type(o)
+      typename = f"{o_type.__module__}.{o_type.__name__}"
+      if typename in encoders:
+          return {
+              "%%hopi_v%%": encoders[typename](o),
+              "%%hopi_t%%": typename,
+          }
+
+      return super().default(o)
+
+
 
 for line in sys.stdin:
-    l = line[:-1]
-    ${debug ? 'sys.stderr.write(l)' : ''}
+  l = line[:-1]
+  ${debug ? 'sys.stderr.write(l)' : ''}
+  i1 = line.index("=")
+  i2 = line.index("=", i1 + 1)
 
-    i1 = line.index("=")
-    i2 = line.index("=", i1 + 1)
+  msg_id = line[:i1]
+  cmd = line[i1 + 1 : i2]
+  data = line[i2 + 1 :]
 
-    msg_id = line[:i1]
-    cmd = line[i1 + 1 : i2]
-    data = line[i2 + 1 :]
+  status = "PASS"
+  try:
+      if cmd == "EVAL":
+          result = eval(data)
+          result = json.dumps(result, cls=Encoder)
 
-    status = "PASS"
-    try:
-        if cmd == "EVAL":
-            result = eval(data)
-            result_type = type(result)
-            result_type = f"{result_type.__module__}.{result_type.__name__}"
-            if result_type in serializers:
-                result = serializers[result_type](result)
-            else:
-                raise Exception(f"{result_type} not serializable")
+      elif cmd == "EXEC":
+          exec(data)
+          result = 0
+  except BaseException as e:
+      result = e.__repr__()
+      status = "FAIL"
 
-        elif cmd == "EXEC":
-            exec(data)
-            result = ""
-            result_type = "str"
-    except BaseException as e:
-        result = e.__repr__()
-        status = "FAIL"
-        result_type = "str"
-
-    print(f"{msg_id}={status}={result_type}=" + result)
+  print(f"{msg_id}={status}={result}")
 `;
 }
 
 interface Message {
   status: 'PASS' | 'FAIL';
   data: string;
-  typeName: string;
 }
 
 export interface PythonShellConfig {
@@ -64,9 +70,7 @@ export default class PythonShell {
 
   proc: ReturnType<typeof spawn>;
 
-  deserializers: Dict<Deserializer<any>['config']['deserialize']> = {
-    str: (v) => v,
-  };
+  decoder = new Decoder();
 
   constructor({ pythonPath, debug = false }: PythonShellConfig) {
     const pythonScript = getPythonScript(debug);
@@ -84,14 +88,12 @@ export default class PythonShell {
   onResponse = (msg: string) => {
     const i1 = msg.indexOf('=');
     const i2 = msg.indexOf('=', i1 + 1);
-    const i3 = msg.indexOf('=', i2 + 1);
 
     const msgId = msg.substring(0, i1);
     const status = msg.substring(i1 + 1, i2) as Message['status'];
-    const typeName = msg.substring(i2 + 1, i3);
-    const data = msg.substring(i3 + 1);
+    const data = msg.substring(i2 + 1);
 
-    this.messages.set(msgId, { status, data, typeName });
+    this.messages.set(msgId, { status, data });
   };
 
   async receive(msgId: string) {
@@ -113,25 +115,19 @@ export default class PythonShell {
 
   async sendAndReceive(cmd: 'EVAL' | 'EXEC', msg: string) {
     const msgId = this.send(cmd, msg);
-    const { data, status, typeName } = await this.receive(msgId);
+    const { data, status } = await this.receive(msgId);
     if (status === 'FAIL') {
       throw new Error(data);
     }
-    return this.deserializers[typeName](data);
+
+    return this.decoder.parseJson(data);
   }
 
-  async addDeserializer({ config }: Deserializer<any>) {
+  async addDecoder(typeDecoder: TypeDecoder) {
+    this.decoder.add(typeDecoder);
     await this.sendAndReceive(
       'EXEC',
-      `serializers["${config.typeName}"] = ${config.serialize}`,
-    );
-
-    this.deserializers[config.typeName] = config.deserialize;
-  }
-
-  addBuiltinDeserializers() {
-    return Promise.all(
-      builtinDeserializers.map((s) => this.addDeserializer(s)),
+      `encoders["${typeDecoder.typeName}"] = ${typeDecoder.encode}`,
     );
   }
 
