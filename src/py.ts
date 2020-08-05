@@ -1,10 +1,10 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable @typescript-eslint/no-use-before-define */
-import PythonShell from './PythonShell';
+import PythonShell, { PythonShellConfig } from './PythonShell';
 
 export interface PyBase {
   x: (strings: readonly string[], ...vars: PyVar[]) => Promise<void>;
-  e: (strings: readonly string[], ...vars: PyVar[]) => Promise<string>;
+  e: (strings: readonly string[], ...vars: PyVar[]) => Promise<any>;
   import: (name: string) => Promise<PyVar>;
   shell: PythonShell;
 }
@@ -56,8 +56,9 @@ export class Py implements PyBase {
 
   varCounter = 0;
 
-  constructor(pythonPath: string) {
-    this.shell = new PythonShell(pythonPath);
+  constructor(init: string | PythonShellConfig) {
+    const config = typeof init === 'string' ? { pythonPath: init } : init;
+    this.shell = new PythonShell(config);
   }
 
   x = async (strings: readonly string[], ...vars: PyVar[]) => {

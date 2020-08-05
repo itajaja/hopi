@@ -1,5 +1,5 @@
 import PythonShell from './PythonShell';
-import Deserializer from './Serializer';
 import { createPythonEnv, kwargs } from './py';
+import Deserializer from './serializers';
 
 export { PythonShell, createPythonEnv, Deserializer, kwargs };

@@ -4,7 +4,7 @@ import { PYTHON_PATH } from './config';
 let shell: PythonShell;
 
 beforeEach(() => {
-  shell = new PythonShell(PYTHON_PATH);
+  shell = new PythonShell({ pythonPath: PYTHON_PATH });
 });
 
 afterEach(() => {

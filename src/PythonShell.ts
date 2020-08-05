@@ -1,18 +1,19 @@
 /* eslint-disable no-console */
 import { spawn } from 'child_process';
 
-import Deserializer, { builtinDeserializers } from './Serializer';
+import Deserializer, { builtinDeserializers } from './serializers';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const PYTHON_SCRIPT = `
+function getPythonScript(debug: boolean) {
+  return `
 import sys
 
 serializers = {}
 
 for line in sys.stdin:
     l = line[:-1]
-    # sys.stderr.write(f'{l}')  # uncomment for debugging
+    ${debug ? 'sys.stderr.write(l)' : ''}
 
     i1 = line.index("=")
     i2 = line.index("=", i1 + 1)
@@ -43,11 +44,17 @@ for line in sys.stdin:
 
     print(f"{msg_id}={status}={result_type}=" + result)
 `;
+}
 
 interface Message {
   status: 'PASS' | 'FAIL';
   data: string;
   typeName: string;
+}
+
+export interface PythonShellConfig {
+  pythonPath: string;
+  debug?: boolean;
 }
 
 export default class PythonShell {
@@ -61,8 +68,9 @@ export default class PythonShell {
     str: (v) => v,
   };
 
-  constructor(public pythonPath: string) {
-    this.proc = spawn(pythonPath, ['-u', '-c', PYTHON_SCRIPT]);
+  constructor({ pythonPath, debug = false }: PythonShellConfig) {
+    const pythonScript = getPythonScript(debug);
+    this.proc = spawn(pythonPath, ['-u', '-c', pythonScript]);
 
     this.proc.stderr!.on('data', (d) => {
       console.warn(`STDERR: ${d}`);
