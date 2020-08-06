@@ -1,4 +1,6 @@
-# hopi
+# hopi [![npm version](https://badge.fury.io/js/hopi.svg)](https://badge.fury.io/js/hopi) [![hopi](https://circleci.com/gh/itajaja/hopi.svg?style=svg)](https://circleci.com/gh/itajaja/hopi)
+
+_If it looks like python, swims like python, and quacks like python, then it probably is python._
 
 Hopi is a Python-in-node interoperability library focused on seamlessness and developer experience.
 
