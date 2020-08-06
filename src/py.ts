@@ -61,17 +61,36 @@ export class Py implements PyBase {
     this.shell = new PythonShell(config);
   }
 
+  *getAllVars(vars: TemplateValue[]): Generator<PyVariable> {
+    for (const v of vars) {
+      if (isPyVariable(v)) yield v;
+      else if (Array.isArray(v)) {
+        for (const vv of this.getAllVars(v)) yield vv;
+      } else if (v instanceof Object) {
+        for (const vv of this.getAllVars(Object.values(v))) yield vv;
+      }
+    }
+  }
+
+  getCommandObject(strings: readonly string[], vars: TemplateValue[]) {
+    const pyVars = Array.from(this.getAllVars(vars));
+
+    return {
+      cmd: buildCommand(strings, vars),
+      pyVars,
+      resolve: () => Promise.all(pyVars.map((v) => v.resolver)),
+    };
+  }
+
   x = async (strings: readonly string[], ...vars: PyVar[]) => {
-    const cmd = buildCommand(strings, vars);
-    const pyVars = vars.filter(isPyVariable);
-    await Promise.all(pyVars.map((v) => v.resolver));
+    const { cmd, resolve } = this.getCommandObject(strings, vars);
+    await resolve();
     await this.shell.sendAndReceive('EXEC', cmd);
   };
 
   e = async (strings: readonly string[], ...vars: TemplateValue[]) => {
-    const cmd = buildCommand(strings, vars);
-    const pyVars = vars.filter(isPyVariable);
-    await Promise.all(pyVars.map((v) => v.resolver));
+    const { cmd, resolve } = this.getCommandObject(strings, vars);
+    await resolve();
     return this.shell.sendAndReceive('EVAL', cmd);
   };
 
@@ -81,15 +100,12 @@ export class Py implements PyBase {
   };
 
   expr = (strings: readonly string[], ...vars: TemplateValue[]): PyVar => {
-    const cmd = buildCommand(strings, vars);
+    const { cmd, resolve } = this.getCommandObject(strings, vars);
     const varId = `v${this.varCounter++}`;
-    const pyVars = vars.filter(isPyVariable);
 
-    const resolver = Promise.all(pyVars.map((v) => v.resolver)).then(
-      async () => {
-        await this.shell.sendAndReceive('EXEC', `${varId}=${cmd}`);
-      },
-    );
+    const resolver = resolve().then(async () => {
+      await this.shell.sendAndReceive('EXEC', `${varId}=${cmd}`);
+    });
     return getPyVar(this, varId, resolver);
   };
 }
@@ -191,7 +207,9 @@ function getPyVar(py: Py, varId: string, resolver: Promise<void>): PyVar {
   }) as any;
 }
 
-export function createPythonEnv(pythonPath: string): PythonEnv {
+export function createPythonEnv(
+  pythonPath: string | PythonShellConfig,
+): PythonEnv {
   const pyObj = new Py(pythonPath);
 
   const py = pyObj.expr;

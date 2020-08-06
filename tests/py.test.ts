@@ -80,6 +80,15 @@ test('functions', async () => {
   );
 });
 
+test('nested arguments', async () => {
+  const json = await py.import('json');
+
+  const raw = json.dumps([1, 2, { foo: py`[${{}}]` }, [3, py`4`]]);
+  expect(await raw._).toMatchInlineSnapshot(
+    `"[1, 2, {\\"foo\\": [{}]}, [3, 4]]"`,
+  );
+});
+
 test('full test', async () => {
   const pd = await py.import('pandas');
   const np = await py.import('numpy');
