@@ -67,5 +67,9 @@
     "lint-staged": "^9.4.2",
     "prettier": "^2.0.1",
     "typescript": "^3.7.5"
+  },
+  "optionalDependencies": {
+    "@types/luxon": "^1.24.3",
+    "luxon": "^1.24.1"
   }
 }

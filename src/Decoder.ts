@@ -6,12 +6,12 @@ export interface TypeDecoder {
   encode: string;
 
   /** a function that converts the decoded json */
-  decode: (value: JSON, fullDecode: Decoder['decode']) => any;
+  decode: (value: Json, fullDecode: Decoder['decode']) => any;
 }
 
-type JSON =
-  | JSON[]
-  | { [idx: string]: JSON }
+export type Json =
+  | Json[]
+  | { [idx: string]: Json }
   | string
   | number
   | boolean
@@ -30,7 +30,7 @@ function mapValues<T1, T2>(o: Dict<T1>, mapper: (v: T1) => T2) {
 export class Decoder {
   decoders: Dict<TypeDecoder['decode'] | undefined> = {};
 
-  decode = (val: JSON): any => {
+  decode = (val: Json): any => {
     if (Array.isArray(val)) {
       return val.map(this.decode);
     }
@@ -55,7 +55,7 @@ export class Decoder {
   }
 
   parseJson(text: string) {
-    const parsed: JSON = JSON.parse(text);
+    const parsed: Json = JSON.parse(text);
     return this.decode(parsed);
   }
 }

@@ -123,13 +123,13 @@ export default class PythonShell {
     return this.decoder.parseJson(data);
   }
 
-  async addDecoder(typeDecoder: TypeDecoder) {
+  addDecoder = async (typeDecoder: TypeDecoder) => {
     this.decoder.add(typeDecoder);
     await this.sendAndReceive(
       'EXEC',
       `encoders["${typeDecoder.typeName}"] = ${typeDecoder.encode}`,
     );
-  }
+  };
 
   kill() {
     this.proc.kill();
