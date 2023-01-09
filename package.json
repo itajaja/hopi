@@ -70,6 +70,6 @@
   },
   "optionalDependencies": {
     "@types/luxon": "^1.24.3",
-    "luxon": "^1.24.1"
+    "luxon": "^1.28.1"
   }
 }
